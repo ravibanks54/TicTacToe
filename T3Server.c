@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         error = 0;   //Used to fix a bug
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
-        if (pid == fork())
+        //if (pid == fork())
         args = malloc(sizeof(arguments));
         args->connfd = connfd;
         args->clientaddr = clientaddr;
@@ -122,25 +122,26 @@ void* handleConnection(void* argsVoid) {
 
     
     Rio_readinitb(&rio, args->connfd);
-
-    if ((n = Rio_readlineb_w(&rio, buf, MAXLINE)) <= 0) {
-        error = 1;  //Used to fix a bug
-        printf("process_request: client issued a bad request (1).\n");
-        close(args->connfd);
-        //free(request);
-        break;
+    while(1){
+        if ((n = Rio_readlineb_w(&rio, buf, MAXLINE)) <= 0) {
+            error = 1;  //Used to fix a bug
+            printf("process_request: client issued a bad request (1).\n");
+            close(args->connfd);
+            //free(request);
+            break;
+        }
+        printf("request: %s\n", buf);
+        if (error) {
+            close(connfd);
+            pthread_exit(NULL);
+        }
+        //pthread_mutex_lock(&lock);
+        //pthread_mutex_unlock(&lock);
+        /*
+         * Receive reply from server and forward on to client
+         */
+    	Rio_writen_w(args->connfd, buf, n);
     }
-    if (error) {
-        close(connfd);
-        pthread_exit(NULL);
-    }
-    pthread_mutex_lock(&lock);
-    pthread_mutex_unlock(&lock);
-    /*
-     * Receive reply from server and forward on to client
-     */
-	Rio_writen_w(args->connfd, buf, n);
-
     close(args->connfd);
     close(serverfd);
     //free(request);
