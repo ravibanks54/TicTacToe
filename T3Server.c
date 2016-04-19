@@ -91,19 +91,19 @@ void* handleConnection(void* argsVoid) {
     int connfd;                     /* socket desciptor for talkign wiht client*/
     int serverfd;                   /* Socket descriptor for talking with end server */
     //char *request;                  /* HTTP request from client */
-    char *request_uri;              /* Start of URI in first HTTP request header line */
-    char *request_uri_end;          /* End of URI in first HTTP request header line */
-    char *rest_of_request;          /* Beginning of second HTTP request header line */
-    int request_len;                /* Total size of HTTP request */
-    int response_len;               /* Total size in bytes of response from end server */
-    int i, n;                       /* General index and counting variables */
-    int realloc_factor;             /* Used to increase size of request buffer if necessary */
+    //char *request_uri;              /* Start of URI in first HTTP request header line */
+    //char *request_uri_end;          /* End of URI in first HTTP request header line */
+    //char *rest_of_request;          /* Beginning of second HTTP request header line */
+    //int request_len;                /* Total size of HTTP request */
+    //int response_len;               /* Total size in bytes of response from end server */
+    int n;                       /* General index and counting variables */
+    //int realloc_factor;             /* Used to increase size of request buffer if necessary */
 
-    char hostname[MAXLINE];         /* Hostname extracted from request URI */
-    char pathname[MAXLINE];         /* Content pathname extracted from request URI */
-    char request[MAXLINE];
-    int serverport;                 /* Port number extracted from request URI (default 80) */
-    char log_entry[MAXLINE];        /* Formatted log entry */
+    //char hostname[MAXLINE];         /* Hostname extracted from request URI */
+    //char pathname[MAXLINE];         /* Content pathname extracted from request URI */
+    //char request[MAXLINE];
+    //int serverport;                 /* Port number extracted from request URI (default 80) */
+    //char log_entry[MAXLINE];        /* Formatted log entry */
 
     rio_t rio;                      /* Rio buffer for calls to buffered rio_readlineb routine */
     char buf[MAXLINE];              /* General I/O buffer */
@@ -111,11 +111,11 @@ void* handleConnection(void* argsVoid) {
     //Used to fix a bug
     int error = 0;                  /* Used to detect error in reading requests */
 
-    if (pthread_mutex_init(&lock, NULL) != 0)
+    /*if (pthread_mutex_init(&lock, NULL) != 0)
     {
         printf("\n Mutex init failed\n");
         return NULL;
-    }
+    }*/
     arguments* args = (arguments*)argsVoid;
     clientaddr = args->clientaddr;
     connfd = args->connfd;
@@ -123,7 +123,7 @@ void* handleConnection(void* argsVoid) {
     
     Rio_readinitb(&rio, args->connfd);
     while(1){
-        if ((n = Rio_readlineb_w(&rio, buf, MAXLINE)) <= 0) {
+        if ((n = Rio_readlineb(&rio, buf, MAXLINE)) <= 0) {
             error = 1;  //Used to fix a bug
             printf("process_request: client issued a bad request (1).\n");
             close(args->connfd);
@@ -140,11 +140,11 @@ void* handleConnection(void* argsVoid) {
         /*
          * Receive reply from server and forward on to client
          */
-    	Rio_writen_w(args->connfd, buf, n);
+    	Rio_writen(args->connfd, buf, n);
     }
     close(args->connfd);
     close(serverfd);
     //free(request);
-    pthread_mutex_destroy(&lock);
+    //pthread_mutex_destroy(&lock);
     return NULL;
 }

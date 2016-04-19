@@ -50,28 +50,29 @@ int main(int argc, char *argv[]) {
    /* Now ask for a message from the user, this message
       * will be read by server
    */
-	
-   printf("Please enter the message: ");
-   bzero(buffer,256);
-   fgets(buffer,255,stdin);
-   
-   /* Send message to the server */
-   n = write(sockfd, buffer, strlen(buffer));
-   
-   if (n < 0) {
-      perror("ERROR writing to socket");
-      exit(1);
+	while(1){
+      printf("Please enter the message: ");
+      bzero(buffer,256);
+      fgets(buffer,255,stdin);
+      
+      /* Send message to the server */
+      n = write(sockfd, buffer, strlen(buffer));
+      
+      if (n < 0) {
+         perror("ERROR writing to socket");
+         exit(1);
+      }
+      
+      /* Now read server response */
+      bzero(buffer,256);
+      n = read(sockfd, buffer, 255);
+      
+      if (n < 0) {
+         perror("ERROR reading from socket");
+         exit(1);
+      }
+   	
+      printf("%s\n",buffer);
    }
-   
-   /* Now read server response */
-   bzero(buffer,256);
-   n = read(sockfd, buffer, 255);
-   
-   if (n < 0) {
-      perror("ERROR reading from socket");
-      exit(1);
-   }
-	
-   printf("%s\n",buffer);
    return 0;
 }
