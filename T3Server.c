@@ -3,11 +3,6 @@
 
 #define DEBUG
 
-int open_clientfd(char *hostname, int port);
-ssize_t Rio_readn_w(int fd, void *ptr, size_t nbytes);
-ssize_t Rio_readlineb_w(rio_t *rp, void *usrbuf, size_t maxlen);
-void Rio_writen_w(int fd, void *usrbuf, size_t n);
-
 /*
  * Function prototypes
  */
@@ -130,7 +125,27 @@ void* handleConnection(void* argsVoid) {
             //free(request);
             break;
         }
-        printf("request: %s\n", buf);
+        if(strcmp(buf, "1") == 0){
+            printf("User Selected %s\n", buf);
+        }else if(strcmp(buf, "2") == 0){
+            printf("User Selected %s\n", buf);
+        }else if(strcmp(buf, "3") == 0){
+            printf("User Selected %s\n", buf);
+        }else if(strcmp(buf, "4") == 0){
+            printf("User Selected %s\n", buf);
+        }else if(strcmp(buf, "5") == 0){
+            printf("User Selected %s\n", buf);
+        }else if(strcmp(buf, "6") == 0){
+            printf("User Selected %s\n", buf);
+        }else if(strcmp(buf, "7") == 0){
+            printf("User Selected %s\n", buf);
+        }else if(strcmp(buf, "8") == 0){
+            printf("User Selected %s\n", buf);
+        }else if(strcmp(buf, "9") == 0){
+            printf("User Selected %s\n", buf);
+        }else{
+            printf("request: %s\n", buf);
+        }
         if (error) {
             close(connfd);
             pthread_exit(NULL);
@@ -140,10 +155,10 @@ void* handleConnection(void* argsVoid) {
         /*
          * Receive reply from server and forward on to client
          */
-    	Rio_writen(args->connfd, buf, n);
+        Rio_writen(args->connfd, buf, n);
     }
     close(args->connfd);
-    close(serverfd);
+    //close(serverfd);
     //free(request);
     //pthread_mutex_destroy(&lock);
     return NULL;
