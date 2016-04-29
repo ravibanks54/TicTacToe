@@ -9,6 +9,8 @@ ssize_t Rio_readn_w(int fd, void *ptr, size_t nbytes);
 ssize_t Rio_readlineb_w(rio_t *rp, void *usrbuf, size_t maxlen);
 void Rio_writen_w(int fd, void *usrbuf, size_t n);
 
+int threadCount = 0;
+
 /*
  * Function prototypes
  */
@@ -32,6 +34,7 @@ int main(int argc, char **argv)
     int connfd;
     arguments* args;
     pthread_t thread;
+    int pid;
 
     //int request_count = 0;    /* Number of requests received so far */
 
@@ -57,7 +60,7 @@ int main(int argc, char **argv)
     listenfd = Open_listenfd(port);
 
     /* Inititialize */
-    
+
     //int pid;
     /* Wait for and process client connections */
     while (1) {
@@ -74,6 +77,18 @@ int main(int argc, char **argv)
             continue;
         }
 
+        if (threadCount == 2) {
+            pid = fork();
+            if (pid != 0) {
+                //playGame
+                printf("In Parent process, created child: %d\n", pid);
+
+            } else {
+                threadCount = 0;
+                //continue while loop
+            }
+        }
+
     }
 
     /* Control never reaches here */
@@ -88,6 +103,10 @@ int main(int argc, char **argv)
  */
 
 void* handleConnection(void* argsVoid) {
+    threadCount++;
+    while(threadCount != 2){
+        sleep(10);
+    }
     struct sockaddr_in clientaddr;  /* Clinet address structure*/
     int connfd;                     /* socket desciptor for talkign wiht client*/
     int serverfd;                   /* Socket descriptor for talking with end server */
@@ -121,9 +140,9 @@ void* handleConnection(void* argsVoid) {
     clientaddr = args->clientaddr;
     connfd = args->connfd;
 
-    
+    printf("Thread Number: %d\n", threadCount);
     Rio_readinitb(&rio, args->connfd);
-    while(1){
+    while (1) {
         if ((n = Rio_readlineb(&rio, buf, MAXLINE)) <= 0) {
             error = 1;  //Used to fix a bug
             printf("process_request: client issued a bad request (1).\n");
@@ -141,7 +160,7 @@ void* handleConnection(void* argsVoid) {
         /*
          * Receive reply from server and forward on to client
          */
-    	Rio_writen(args->connfd, buf, n);
+        Rio_writen(args->connfd, buf, n);
     }
     close(args->connfd);
     close(serverfd);
