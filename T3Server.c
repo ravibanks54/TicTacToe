@@ -154,8 +154,8 @@ void* handleConnection(void* argsVoid) {
             int column = pos%3;
 
             if(board[row][column] == 'X' || board[row][column] == 'O'){
-                buf = "Error, move already made!\n";
-                Rio_writen(args->connfd, buf, 256);
+                //buf = "Error, move already made!\n";
+                Rio_writen(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
                 continue;
             }
 
@@ -199,8 +199,8 @@ void* handleConnection(void* argsVoid) {
             int column = pos%3;
 
             if(board[row][column] == 'X' || board[row][column] == 'O'){
-                buf = "Error, move already made!\n";
-                Rio_writen(args->connfd, buf, 256);
+                //buf = "Error, move already made!\n";
+                Rio_writen(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
                 continue;
             }
 
