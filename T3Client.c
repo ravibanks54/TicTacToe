@@ -58,6 +58,12 @@ int main(int argc, char *argv[]) {
       n = read(sockfd, buffer, 256);
       printf("n1 = %d\n", n);
       printf("%s\n", buffer);
+      if(strcmp(buffer, "You win!!!\n") == 0){
+         exit(0);
+      }else if(strcmp(buffer, "You lose, Willis\n") == 0){
+         exit(0);
+      }
+      
       printf("\nPlease enter the number of the square:\n");
       scanf("%d", &selection);
       if (selection <1 || selection > 9){

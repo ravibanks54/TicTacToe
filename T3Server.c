@@ -5,8 +5,10 @@
 #define DEBUG
 /*
 TODO: Block input (write to client initially, read, strcmp)
-Check for Win COndition
-Print Draw/win/lose to clients
+Clean up debug statements
+actually check retvals
+actually send draw
+fix end state
 
 
 
@@ -26,6 +28,7 @@ char board[3][3] = { // The board
 };
 int turn = 0;
 int currentPlayer = -1;
+int hodor = 0;
 
 /*
  * Function prototypes
@@ -120,6 +123,7 @@ void* handleConnection(void* argsVoid) {
     int n;                       /* General index and counting variables */
     int playerID;
     char buf[256];
+    int line;
 
  //   rio_t rio;                      /* Rio buffer for calls to buffered rio_readlineb routine */
     int selection;              /* General I/O buffer */
@@ -141,11 +145,15 @@ void* handleConnection(void* argsVoid) {
 
     while (1) {
 
-        if (turn > 8){
+        if (turn > 8 && hodor == 0){
             printf("Draw!\n");
             //send to both players
         }
         if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
+            if(hodor == 1){
+                write(args->connfd, "You lose, Willis\n", strlen("You lose, Willis\n"));
+                pthread_exit(NULL);
+            }
             bzero(buf, 256);
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
             retval = write(args->connfd, buf, 256);
@@ -192,9 +200,30 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            //printboard
+                    // Check for a winning line - diagonals first 
+            if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) || (board[0][2] == board[1][1] && board[0][2] == board[2][0])){
+                write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
+                hodor = 1;
+                turn++;
+                pthread_exit(NULL);
+            }else{
+            // Check rows and columns for a winning line 
+                for (line = 0; line <= 2; line ++){
+                    if ((board[line][0] == board[line][1] && board[line][0] == board[line][2]) || (board[0][line] == board[1][line] && board[0][line] == board[2][line])){
+                        write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
+                        hodor = 1;
+                        turn++;
+                        pthread_exit(NULL);
+                    }
+                }
+            }
+
             turn++; //Increment turn
         }else if (turn % 2 == 1 && playerID == 1){
+            if(hodor == 1){
+                write(args->connfd, "You lose, Willis\n", strlen("You lose, Willis\n"));
+                pthread_exit(NULL);
+            }
             bzero(buf, 256);
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
             retval = write(args->connfd, buf, 256);
@@ -243,7 +272,23 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            //printboard
+            // Check for a winning line - diagonals first 
+            if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) || (board[0][2] == board[1][1] && board[0][2] == board[2][0])){
+                write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
+                hodor = 1;
+                turn++;
+                pthread_exit(NULL);
+            }else{
+            // Check rows and columns for a winning line 
+                for (line = 0; line <= 2; line ++){
+                    if ((board[line][0] == board[line][1] && board[line][0] == board[line][2]) || (board[0][line] == board[1][line] && board[0][line] == board[2][line])){
+                        write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
+                        hodor = 1;
+                        turn++;
+                        pthread_exit(NULL);
+                    }
+                }
+            }
             turn++; //Increment turn
         }else{
             sleep(1);
