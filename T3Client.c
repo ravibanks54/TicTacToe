@@ -27,14 +27,14 @@ int main(int argc, char *argv[]) {
    portno = atoi(argv[2]);
    
    // Create a socket point
-   sockfd = socket(AF_INET, SOCK_STREAM, 0);
+   sockfd = Socket(AF_INET, SOCK_STREAM, 0);
    
    if (sockfd < 0) {
       perror("ERROR opening socket");
       exit(1);
    }
 	
-   server = gethostbyname(argv[1]);
+   server = Gethostbyname(argv[1]);
    
    if (server == NULL) {
       fprintf(stderr,"ERROR, no such host\n");
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
    serv_addr.sin_port = htons(portno);
    
    // Now connect to the server
-   if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+   if (Connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
       perror("ERROR connecting");
       exit(1);
    }
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
       
       // Now read server response
       bzero(buffer,256);
-      n = read(sockfd, buffer, 255);
+      n = Read(sockfd, buffer, 255);
       
       if (n < 0) {
          perror("ERROR reading from socket");
@@ -175,7 +175,7 @@ void playgame(int socket, char * buffer, int playerID)
     // Ask to play another round 
     printf("\nPlay another round? (y/n) ");
     fgetc(stdin);
-    fgets(buffer, sizeof buffer, stdin);
+    Fgets(buffer, sizeof buffer, stdin);
     buffer[strlen(buffer) - 1] = '\0';
     printf("\nWating for %s to acknowledge...\n", opponent);
 
