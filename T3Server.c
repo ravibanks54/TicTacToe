@@ -117,7 +117,7 @@ void* handleConnection(void* argsVoid) {
     rio_t rio;                      /* Rio buffer for calls to buffered rio_readlineb routine */
     int* selection;              /* General I/O buffer */
     int error = 0;                  /* Used to detect error in reading requests */
-
+    //bzero()
     arguments* args = (arguments*)argsVoid;
     clientaddr = args->clientaddr;
     connfd = args->connfd;
@@ -138,8 +138,10 @@ void* handleConnection(void* argsVoid) {
             //send to both players
         }
         if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
-            //print board
-            if ((n = Rio_readlineb(&rio, selection, MAXLINE)) <= 0) {   //Read input
+            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+            bzero(buf, 256);
+            Rio_writen(args->connfd, buf, 256);
+            if ((n = Rio_readnb(&rio, selection, MAXLINE)) <= 0) {   //Read input
                 error = 1;  //Used to fix a bug
                 printf("process_request: client issued a bad request (1).\n");
                 close(args->connfd);
@@ -182,7 +184,8 @@ void* handleConnection(void* argsVoid) {
             //printboard
             turn++; //Increment turn
         }else if (turn % 2 == 1 && playerID == 1){
-            //printboard
+            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+            Rio_writen(args->connfd, buf, 256);
             if ((n = Rio_readlineb(&rio, selection, MAXLINE)) <= 0) {   //Read input
                 error = 1;  //Used to fix a bug
                 printf("process_request: client issued a bad request (1).\n");
@@ -190,6 +193,7 @@ void* handleConnection(void* argsVoid) {
                 //free(request);
                 break;
             }
+
 
             int pos = *selection; 
             //place input into grid (O)
@@ -217,6 +221,8 @@ void* handleConnection(void* argsVoid) {
             }
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
             Rio_writen(args->connfd, buf, 256);
+
+
 
             turn++; //Increment turn  
         }else{

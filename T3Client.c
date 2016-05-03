@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
    int sockfd, portno, n;
    struct sockaddr_in serv_addr;
    struct hostent *server;
-   int* selection; 
+   int selection;
    
    char buffer[256];
    
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
    serv_addr.sin_port = htons(portno);
    
    // Now connect to the server
-   if (Connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+   if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
       perror("ERROR connecting");
       exit(1);
    }
@@ -55,16 +55,19 @@ int main(int argc, char *argv[]) {
    // Now ask for a message from the user, this message will be read by server
    
 	while(1){
-      
+      Rio_readn(sockfd, buffer, 255);
+      printf("%s\n", buffer);
       printf("\nPlease enter the number of the square:\n");
-      scanf("%d", selection);
-      if (*selection <1 || *selection > 9){
+      scanf("%d", &selection);
+      if (selection <1 || selection > 9){
          printf("\nPlease enter a proper value.\n");
          continue;
       }
 
       // Send message to the server
-      n = write(sockfd, selection, strlen(buffer));
+      n = rio_writen(sockfd, &selection, sizeof(selection));
+            printf("n: %d\n",n);
+
       
       if (n < 0) {
          perror("ERROR writing to socket");
@@ -73,7 +76,9 @@ int main(int argc, char *argv[]) {
       
       // Now read server response
       bzero(buffer,256);
-      n = Read(sockfd, buffer, 255);
+      n = Rio_readn(sockfd, buffer, 255);
+
+      printf("n: %d\n",n);
       
       if (n < 0) {
          perror("ERROR reading from socket");
