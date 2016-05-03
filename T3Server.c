@@ -6,9 +6,9 @@
 
 // testing
 int open_clientfd(char *hostname, int port);
-ssize_t Rio_readn_w(int fd, void *ptr, size_t nbytes);
-ssize_t Rio_readlineb_w(rio_t *rp, void *usrbuf, size_t maxlen);
-void Rio_writen_w(int fd, void *usrbuf, size_t n);
+//ssize_t read(int fd, void *ptr, size_t nbytes);
+//ssize_t read(rio_t *rp, void *usrbuf, size_t maxlen);
+//void Rio_writen_w(int fd, void *usrbuf, size_t n);
 
 int threadCount = 0;
 
@@ -109,15 +109,15 @@ void* handleConnection(void* argsVoid) {
     threadCount++;
 
     struct sockaddr_in clientaddr;  /* Clinet address structure*/
-    int connfd;                     /* socket desciptor for talkign wiht client*/
-    int serverfd;                   /* Socket descriptor for talking with end server */
+    int connfd;                     /* socket desciptor for talking wiht client*/
     int n;                       /* General index and counting variables */
     int playerID;
     char buf[256];
-    rio_t rio;                      /* Rio buffer for calls to buffered rio_readlineb routine */
+ //   rio_t rio;                      /* Rio buffer for calls to buffered rio_readlineb routine */
     int* selection;              /* General I/O buffer */
     int error = 0;                  /* Used to detect error in reading requests */
     //bzero()
+    //int retval=-1;
     arguments* args = (arguments*)argsVoid;
     clientaddr = args->clientaddr;
     connfd = args->connfd;
@@ -129,7 +129,7 @@ void* handleConnection(void* argsVoid) {
     while(threadCount != 2){
         sleep(1);
     }
-    Rio_readinitb(&rio, args->connfd);
+    //Rio_readinitb(&rio, args->connfd);
 
     while (1) {
 
@@ -140,8 +140,9 @@ void* handleConnection(void* argsVoid) {
         if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
             bzero(buf, 256);
-            Rio_writen(args->connfd, buf, 256);
-            if ((n = Rio_readnb(&rio, selection, MAXLINE)) <= 0) {   //Read input
+            write(args->connfd, buf, 256);
+            //if ((n = Rio_readnb(&rio, selection, MAXLINE)) <= 0) {   //Read input
+            if ((n = read(args->connfd, selection, MAXLINE)) <= 0){
                 error = 1;  //Used to fix a bug
                 printf("process_request: client issued a bad request (1).\n");
                 close(args->connfd);
@@ -157,7 +158,7 @@ void* handleConnection(void* argsVoid) {
 
             if(board[row][column] == 'X' || board[row][column] == 'O'){
                 //buf = "Error, move already made!\n";
-                Rio_writen(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
+                write(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
                 continue;
             }
 
@@ -173,7 +174,7 @@ void* handleConnection(void* argsVoid) {
                 pthread_exit(NULL);
             }
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
-            Rio_writen(args->connfd, buf, 256);
+            write(args->connfd, buf, 256);
             
             turn++; //Increment turn  
 
@@ -185,8 +186,8 @@ void* handleConnection(void* argsVoid) {
             turn++; //Increment turn
         }else if (turn % 2 == 1 && playerID == 1){
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
-            Rio_writen(args->connfd, buf, 256);
-            if ((n = Rio_readlineb(&rio, selection, MAXLINE)) <= 0) {   //Read input
+            write(args->connfd, buf, 256);
+            if ((n = read(args->connfd, selection, MAXLINE)) <= 0) {   //Read input
                 error = 1;  //Used to fix a bug
                 printf("process_request: client issued a bad request (1).\n");
                 close(args->connfd);
@@ -204,7 +205,7 @@ void* handleConnection(void* argsVoid) {
 
             if(board[row][column] == 'X' || board[row][column] == 'O'){
                 //buf = "Error, move already made!\n";
-                Rio_writen(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
+                write(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
                 continue;
             }
 
@@ -220,7 +221,7 @@ void* handleConnection(void* argsVoid) {
                 pthread_exit(NULL);
             }
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
-            Rio_writen(args->connfd, buf, 256);
+            write(args->connfd, buf, 256);
 
 
 
@@ -233,9 +234,8 @@ void* handleConnection(void* argsVoid) {
 
 
         //print to both ppl
-        Rio_writen(args->connfd, selection, n);
+        write(args->connfd, selection, n);
     }
     close(args->connfd);
-    close(serverfd);
     return NULL;
 }
