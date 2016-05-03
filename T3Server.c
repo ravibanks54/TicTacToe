@@ -1,5 +1,6 @@
 #include "csapp.h"
 #include <pthread.h>
+#include <unistd.h>
 
 #define DEBUG
 
@@ -112,7 +113,7 @@ void* handleConnection(void* argsVoid) {
     int serverfd;                   /* Socket descriptor for talking with end server */
     int n;                       /* General index and counting variables */
     int playerID;
-
+    char buf[256];
     rio_t rio;                      /* Rio buffer for calls to buffered rio_readlineb routine */
     int* selection;              /* General I/O buffer */
     int error = 0;                  /* Used to detect error in reading requests */
@@ -126,7 +127,7 @@ void* handleConnection(void* argsVoid) {
 
     printf("Thread Number/Player ID: %d\n", threadCount);
     while(threadCount != 2){
-        sleep(10);
+        sleep(1);
     }
     Rio_readinitb(&rio, args->connfd);
 
@@ -137,6 +138,7 @@ void* handleConnection(void* argsVoid) {
             //send to both players
         }
         if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
+            //print board
             if ((n = Rio_readlineb(&rio, selection, MAXLINE)) <= 0) {   //Read input
                 error = 1;  //Used to fix a bug
                 printf("process_request: client issued a bad request (1).\n");
@@ -144,15 +146,85 @@ void* handleConnection(void* argsVoid) {
                 //free(request);
                 break;
             }
+            int pos = *selection;
             //place input into grid (X)
-            printf("request: %d\n", selection);
+            printf("request: %d\n", pos);
+
+            int row = --pos/3;
+            int column = pos%3;
+
+            if(board[row][column] == 'X' || board[row][column] == 'O'){
+                buf = "Error, move already made!\n";
+                Rio_writen(args->connfd, buf, 256);
+                continue;
+            }
+
+            if (pos <1 || pos > 9){
+                printf("\nPlease enter a proper value.\n");
+                continue;
+            }
+
+            board[row][column] = 'X';
 
             if (error) {
                 close(connfd);
                 pthread_exit(NULL);
             }
+            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+            Rio_writen(args->connfd, buf, 256);
+            
+            turn++; //Increment turn  
+
+            if (error) {
+                close(connfd);
+                pthread_exit(NULL);
+            }
+            //printboard
             turn++; //Increment turn
-        }else if (turn % 2 == 1)
+        }else if (turn % 2 == 1 && playerID == 1){
+            //printboard
+            if ((n = Rio_readlineb(&rio, selection, MAXLINE)) <= 0) {   //Read input
+                error = 1;  //Used to fix a bug
+                printf("process_request: client issued a bad request (1).\n");
+                close(args->connfd);
+                //free(request);
+                break;
+            }
+
+            int pos = *selection; 
+            //place input into grid (O)
+            printf("request: %d\n", pos);
+
+            int row = --pos/3;
+            int column = pos%3;
+
+            if(board[row][column] == 'X' || board[row][column] == 'O'){
+                buf = "Error, move already made!\n";
+                Rio_writen(args->connfd, buf, 256);
+                continue;
+            }
+
+            if (pos <1 || pos > 9){
+                printf("\nPlease enter a proper value.\n");
+                continue;
+            }
+
+            board[row][column] = 'O';
+
+            if (error) {
+                close(connfd);
+                pthread_exit(NULL);
+            }
+            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+            Rio_writen(args->connfd, buf, 256);
+
+            turn++; //Increment turn  
+        }else{
+            sleep(1);
+            continue;
+        }
+
+
 
         //print to both ppl
         Rio_writen(args->connfd, selection, n);
