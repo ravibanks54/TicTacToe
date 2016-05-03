@@ -55,7 +55,8 @@ int main(int argc, char *argv[]) {
    // Now ask for a message from the user, this message will be read by server
    
 	while(1){
-      Rio_readn(sockfd, buffer, 255);
+      n = read(sockfd, buffer, 256);
+      printf("n1 = %d\n", n);
       printf("%s\n", buffer);
       printf("\nPlease enter the number of the square:\n");
       scanf("%d", &selection);
@@ -65,8 +66,8 @@ int main(int argc, char *argv[]) {
       }
 
       // Send message to the server
-      n = rio_writen(sockfd, &selection, sizeof(selection));
-            printf("n: %d\n",n);
+      n = write(sockfd, &selection, sizeof(selection));
+      printf("n2 = %d\n", n);
 
       
       if (n < 0) {
@@ -75,10 +76,10 @@ int main(int argc, char *argv[]) {
       }
       
       // Now read server response
-      bzero(buffer,256);
-      n = Rio_readn(sockfd, buffer, 255);
+      //bzero(buffer,256);
+      n = read(sockfd, buffer, 256);
 
-      printf("n: %d\n",n);
+      printf("n3: %d\n",n);
       
       if (n < 0) {
          perror("ERROR reading from socket");

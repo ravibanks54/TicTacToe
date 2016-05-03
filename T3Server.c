@@ -3,7 +3,14 @@
 #include <unistd.h>
 
 #define DEBUG
+/*
+TODO: Block input (write to client initially, read, strcmp)
+Check for Win COndition
+Print Draw/win/lose to clients
 
+
+
+*/
 // testing
 int open_clientfd(char *hostname, int port);
 //ssize_t read(int fd, void *ptr, size_t nbytes);
@@ -79,13 +86,13 @@ int main(int argc, char **argv)
             continue;
         }
 
-        if (threadCount == 2) {
+        if (threadCount == 1) {
             pid = fork();
             if (pid != 0) {
-                //playGame
-                //wait here
                 printf("In Parent process, created child: %d\n", pid);
-
+                while(1){
+                    sleep(1000000000000000000);
+                }
             } else {
                 threadCount = 0;
                 //continue while loop
@@ -113,11 +120,12 @@ void* handleConnection(void* argsVoid) {
     int n;                       /* General index and counting variables */
     int playerID;
     char buf[256];
+
  //   rio_t rio;                      /* Rio buffer for calls to buffered rio_readlineb routine */
-    int* selection;              /* General I/O buffer */
+    int selection;              /* General I/O buffer */
     int error = 0;                  /* Used to detect error in reading requests */
     //bzero()
-    //int retval=-1;
+    int retval=-1;
     arguments* args = (arguments*)argsVoid;
     clientaddr = args->clientaddr;
     connfd = args->connfd;
@@ -138,31 +146,33 @@ void* handleConnection(void* argsVoid) {
             //send to both players
         }
         if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
-            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
             bzero(buf, 256);
-            write(args->connfd, buf, 256);
+            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+            retval = write(args->connfd, buf, 256);
+            printf("Retval1 = %d\n", retval);
             //if ((n = Rio_readnb(&rio, selection, MAXLINE)) <= 0) {   //Read input
-            if ((n = read(args->connfd, selection, MAXLINE)) <= 0){
+            if ((n = read(args->connfd, &selection, MAXLINE)) <= 0){
                 error = 1;  //Used to fix a bug
                 printf("process_request: client issued a bad request (1).\n");
                 close(args->connfd);
                 //free(request);
                 break;
             }
-            int pos = *selection;
+            int pos = selection;
             //place input into grid (X)
-            printf("request: %d\n", pos);
+            printf("pos: %d\n", pos);
 
             int row = --pos/3;
             int column = pos%3;
 
             if(board[row][column] == 'X' || board[row][column] == 'O'){
                 //buf = "Error, move already made!\n";
-                write(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
+                retval = write(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
+                printf("Retval2 = %d\n", retval);
                 continue;
             }
 
-            if (pos <1 || pos > 9){
+            if (pos <0 || pos > 8){
                 printf("\nPlease enter a proper value.\n");
                 continue;
             }
@@ -173,11 +183,11 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
-            write(args->connfd, buf, 256);
+            bzero(buf,256);
+            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+            retval = write(args->connfd, buf, 256);
+            printf("Retval3 = %d\n", retval);
             
-            turn++; //Increment turn  
-
             if (error) {
                 close(connfd);
                 pthread_exit(NULL);
@@ -185,31 +195,34 @@ void* handleConnection(void* argsVoid) {
             //printboard
             turn++; //Increment turn
         }else if (turn % 2 == 1 && playerID == 1){
+            bzero(buf, 256);
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
-            write(args->connfd, buf, 256);
-            if ((n = read(args->connfd, selection, MAXLINE)) <= 0) {   //Read input
+            retval = write(args->connfd, buf, 256);
+            printf("Retval4 = %d\n", retval);
+            bzero(buf, 256);
+            //if ((n = Rio_readnb(&rio, selection, MAXLINE)) <= 0) {   //Read input
+            if ((n = read(args->connfd, &selection, MAXLINE)) <= 0){
                 error = 1;  //Used to fix a bug
                 printf("process_request: client issued a bad request (1).\n");
                 close(args->connfd);
                 //free(request);
                 break;
             }
-
-
-            int pos = *selection; 
-            //place input into grid (O)
-            printf("request: %d\n", pos);
+            int pos = selection;
+            //place input into grid (X)
+            printf("pos: %d\n", pos);
 
             int row = --pos/3;
             int column = pos%3;
 
             if(board[row][column] == 'X' || board[row][column] == 'O'){
                 //buf = "Error, move already made!\n";
-                write(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
+                retval = write(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
+                printf("Retval5 = %d\n", retval);
                 continue;
             }
 
-            if (pos <1 || pos > 9){
+            if (pos <0 || pos > 8){
                 printf("\nPlease enter a proper value.\n");
                 continue;
             }
@@ -220,21 +233,23 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n  %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
-            write(args->connfd, buf, 256);
-
-
-
-            turn++; //Increment turn  
+            printf("Right before write\n");
+            bzero(buf,256);
+            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+            retval = write(args->connfd, buf, 256);
+            printf("Retval6 = %d\n", retval);
+            
+            if (error) {
+                close(connfd);
+                pthread_exit(NULL);
+            }
+            //printboard
+            turn++; //Increment turn
         }else{
             sleep(1);
             continue;
         }
 
-
-
-        //print to both ppl
-        write(args->connfd, selection, n);
     }
     close(args->connfd);
     return NULL;
