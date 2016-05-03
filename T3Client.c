@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
    }
    return 0;
 }
-
+/*
 void playgame(int socket, char * buffer, int playerID)
 {
     int len, datasocket = socket;
@@ -191,3 +191,4 @@ void playgame(int socket, char * buffer, int playerID)
         ingame = 0;
     }
 }
+*/
