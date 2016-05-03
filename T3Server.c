@@ -11,6 +11,14 @@ void Rio_writen_w(int fd, void *usrbuf, size_t n);
 
 int threadCount = 0;
 
+char board[3][3] = { // The board 
+        {'1', '2', '3'}, // Initial values are reference numbers 
+        {'4', '5', '6'}, // used to select a vacant square for 
+        {'7', '8', '9'} // a turn. 
+};
+int turn = 0;
+int currentPlayer = -1;
+
 /*
  * Function prototypes
  */
@@ -22,6 +30,7 @@ typedef struct arguments_t {
 
     int connfd;
     struct sockaddr_in clientaddr;
+    int playerID;
 
 } arguments;
 
@@ -49,20 +58,11 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    /*
-     * Ignore any SIGPIPE signals elicited by writing to a connection
-     * that has already been closed by the peer process.
-     */
     signal(SIGPIPE, SIG_IGN);
 
     /* Create a listening descriptor */
     port = atoi(argv[1]);
     listenfd = Open_listenfd(port);
-
-    /* Inititialize */
-
-    //int pid;
-    /* Wait for and process client connections */
     while (1) {
         error = 0;   //Used to fix a bug
         clientlen = sizeof(clientaddr);
@@ -71,6 +71,7 @@ int main(int argc, char **argv)
         args = malloc(sizeof(arguments));
         args->connfd = connfd;
         args->clientaddr = clientaddr;
+        args->playerID = threadCount;
         if (pthread_create(&thread, NULL, &handleConnection, args)) {
             //free(args);
             perror("Thread creation failed!");
@@ -81,6 +82,7 @@ int main(int argc, char **argv)
             pid = fork();
             if (pid != 0) {
                 //playGame
+                //wait here
                 printf("In Parent process, created child: %d\n", pid);
 
             } else {
@@ -104,67 +106,58 @@ int main(int argc, char **argv)
 
 void* handleConnection(void* argsVoid) {
     threadCount++;
-    while(threadCount != 2){
-        sleep(10);
-    }
+
     struct sockaddr_in clientaddr;  /* Clinet address structure*/
     int connfd;                     /* socket desciptor for talkign wiht client*/
     int serverfd;                   /* Socket descriptor for talking with end server */
-    //char *request;                  /* HTTP request from client */
-    //char *request_uri;              /* Start of URI in first HTTP request header line */
-    //char *request_uri_end;          /* End of URI in first HTTP request header line */
-    //char *rest_of_request;          /* Beginning of second HTTP request header line */
-    //int request_len;                /* Total size of HTTP request */
-    //int response_len;               /* Total size in bytes of response from end server */
     int n;                       /* General index and counting variables */
-    //int realloc_factor;             /* Used to increase size of request buffer if necessary */
-
-    //char hostname[MAXLINE];         /* Hostname extracted from request URI */
-    //char pathname[MAXLINE];         /* Content pathname extracted from request URI */
-    //char request[MAXLINE];
-    //int serverport;                 /* Port number extracted from request URI (default 80) */
-    //char log_entry[MAXLINE];        /* Formatted log entry */
+    int playerID;
 
     rio_t rio;                      /* Rio buffer for calls to buffered rio_readlineb routine */
-    char buf[MAXLINE];              /* General I/O buffer */
-
-    //Used to fix a bug
+    int* selection;              /* General I/O buffer */
     int error = 0;                  /* Used to detect error in reading requests */
 
-    /*if (pthread_mutex_init(&lock, NULL) != 0)
-    {
-        printf("\n Mutex init failed\n");
-        return NULL;
-    }*/
     arguments* args = (arguments*)argsVoid;
     clientaddr = args->clientaddr;
     connfd = args->connfd;
+    playerID = args->playerID;
 
-    printf("Thread Number: %d\n", threadCount);
+
+
+    printf("Thread Number/Player ID: %d\n", threadCount);
+    while(threadCount != 2){
+        sleep(10);
+    }
     Rio_readinitb(&rio, args->connfd);
+
     while (1) {
-        if ((n = Rio_readlineb(&rio, buf, MAXLINE)) <= 0) {
-            error = 1;  //Used to fix a bug
-            printf("process_request: client issued a bad request (1).\n");
-            close(args->connfd);
-            //free(request);
-            break;
+
+        if (turn > 8){
+            printf("Draw!\n");
+            //send to both players
         }
-        printf("request: %s\n", buf);
-        if (error) {
-            close(connfd);
-            pthread_exit(NULL);
-        }
-        //pthread_mutex_lock(&lock);
-        //pthread_mutex_unlock(&lock);
-        /*
-         * Receive reply from server and forward on to client
-         */
-        Rio_writen(args->connfd, buf, n);
+        if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
+            if ((n = Rio_readlineb(&rio, selection, MAXLINE)) <= 0) {   //Read input
+                error = 1;  //Used to fix a bug
+                printf("process_request: client issued a bad request (1).\n");
+                close(args->connfd);
+                //free(request);
+                break;
+            }
+            //place input into grid (X)
+            printf("request: %d\n", selection);
+
+            if (error) {
+                close(connfd);
+                pthread_exit(NULL);
+            }
+            turn++; //Increment turn
+        }else if (turn % 2 == 1)
+
+        //print to both ppl
+        Rio_writen(args->connfd, selection, n);
     }
     close(args->connfd);
     close(serverfd);
-    //free(request);
-    //pthread_mutex_destroy(&lock);
     return NULL;
 }
