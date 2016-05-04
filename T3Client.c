@@ -55,12 +55,13 @@ int main(int argc, char *argv[]) {
    // Now ask for a message from the user, this message will be read by server
    
 	while(1){
+      bzero(buffer, 256);
       n = read(sockfd, buffer, 256);
       printf("n1 = %d\n", n);
       printf("%s\n", buffer);
       if(strcmp(buffer, "You win!!!\n") == 0){
          exit(0);
-      }else if(strcmp(buffer, "You lose, Willis\n") == 0){
+      }else if(strcmp(buffer, "You lose!!!\n") == 0){
          exit(0);
       }
       
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]) {
       }
       
       // Now read server response
-      //bzero(buffer,256);
+      bzero(buffer,256);
       n = read(sockfd, buffer, 256);
 
       printf("n3: %d\n",n);

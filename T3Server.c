@@ -151,7 +151,7 @@ void* handleConnection(void* argsVoid) {
         }
         if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
             if(hodor == 1){
-                write(args->connfd, "You lose, Willis\n", strlen("You lose, Willis\n"));
+                write(args->connfd, "You lose!!!\n", strlen("You lose!!!\n"));
                 pthread_exit(NULL);
             }
             bzero(buf, 256);
@@ -221,7 +221,7 @@ void* handleConnection(void* argsVoid) {
             turn++; //Increment turn
         }else if (turn % 2 == 1 && playerID == 1){
             if(hodor == 1){
-                write(args->connfd, "You lose, Willis\n", strlen("You lose, Willis\n"));
+                write(args->connfd, "You lose!!!\n", strlen("You lose!!!\n"));
                 pthread_exit(NULL);
             }
             bzero(buf, 256);
