@@ -36,17 +36,13 @@ int main(int argc, char **argv)
     arguments* args;
     pthread_t thread;
     int pid;
-
     int error = 0;                  /* Used to detect error in reading requests */
-
     /* Check arguments */
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <port number>\n", argv[0]);
         exit(0);
     }
-
     signal(SIGPIPE, SIG_IGN);
-
     /* Create a listening descriptor */
     port = atoi(argv[1]);
     listenfd = Open_listenfd(port);
@@ -79,11 +75,6 @@ int main(int argc, char **argv)
     /* Control never reaches here */
     exit(0);
 }
-
-/*
- * Read the entire HTTP request into the request buffer, one line
- * at a time.
- */
 
 void* handleConnection(void* argsVoid) {
     threadCount++;
@@ -137,10 +128,8 @@ void* handleConnection(void* argsVoid) {
                 break;
             }
             int pos = selection;
-            printf("pos: %d\n", pos);
             int row = --pos/3;
             int column = pos%3;
-
             if(board[row][column] == 'X' || board[row][column] == 'O'){
                 retval = write(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
                 if(retval < 0){
@@ -149,7 +138,6 @@ void* handleConnection(void* argsVoid) {
                 }
                 continue;
             }
-
             if (pos <0 || pos > 8){
                 printf("\nPlease enter a proper value.\n");
                 continue;
@@ -198,7 +186,6 @@ void* handleConnection(void* argsVoid) {
                     }
                 }
             }
-
             turn++; //Increment turn
         }else if (turn % 2 == 1 && playerID == 1){
             if(hodor == 1){
@@ -216,7 +203,6 @@ void* handleConnection(void* argsVoid) {
                 printf("Error writing!\n");
                 pthread_exit(NULL);
             }
-            printf("Retval4 = %d\n", retval);
             bzero(buf, 256);
             if ((n = read(args->connfd, &selection, MAXLINE)) <= 0){
                 error = 1;  //Used to fix a bug
@@ -225,8 +211,6 @@ void* handleConnection(void* argsVoid) {
                 break;
             }
             int pos = selection;
-            printf("pos: %d\n", pos);
-
             int row = --pos/3;
             int column = pos%3;
 
