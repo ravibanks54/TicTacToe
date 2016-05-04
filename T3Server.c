@@ -107,12 +107,12 @@ void* handleConnection(void* argsVoid) {
     }
     while (1) {
         if (turn > 8 && hodor == 0){
-            //printf("Draw!\n");
             retval = write(args->connfd, "Tie game!!!\n", strlen("Tie game!!!\n"));
             if (retval < 0){
                 printf("Error writing!\n");
                 pthread_exit(NULL);
             }
+            pthread_exit(NULL);
         }
         if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
             if(hodor == 1){
@@ -250,7 +250,7 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            printf("Right before write\n");
+            //printf("Right before write\n");
             bzero(buf,256);
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
             retval = write(args->connfd, buf, 256);
