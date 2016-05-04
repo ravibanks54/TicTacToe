@@ -4,7 +4,11 @@
 
 #define DEBUG
 /*
-TODO: Block input (write to client initially, read, strcmp)
+TODO: (Icing on top)
+Block input (write to client initially, read, strcmp)
+Add play again option
+Fix Tie game final board state
+Tell players which symbol they are
 */
 int open_clientfd(char *hostname, int port);
 int threadCount = 0;
