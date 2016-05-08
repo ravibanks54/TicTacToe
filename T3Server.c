@@ -11,47 +11,48 @@ Fix Tie game final board state (2nd player doesn't receive last move)
 Tell players which symbol they are
 */
 int open_clientfd(char *hostname, int port);
-int threadCount = 0;
+
+int threadCount = 0;    //Per process thread count
 
 char board[3][3] = { // The board 
         {'1', '2', '3'}, // Initial values are reference numbers 
         {'4', '5', '6'}, // used to select a vacant square for 
         {'7', '8', '9'} // a turn. 
 };
-int turn = 0;
+int turn = 0;       // Global Turn Counter
 int currentPlayer = -1;
-int hodor = 0;
+int hodor = 0;      // Signal variable if a player has won
 
 void* handleConnection(void* args);
 
-typedef struct arguments_t {
+typedef struct arguments_t {        //Used to create a thread to handle each client connection
     int connfd;
     struct sockaddr_in clientaddr;
-    int playerID;
+    int playerID;                   //Pass the player's ID into the thread
 } arguments;
 
 int main(int argc, char **argv)
 {
-    int listenfd;             /* The proxy's listening descriptor */
-    int port;                 /* The port the proxy is listening on */
-    int clientlen;            /* Size in bytes of the client socket address */
+    int listenfd;             // The proxy's listening descriptor 
+    int port;                 // The port the proxy is listening on 
+    int clientlen;            // Size in bytes of the client socket address 
     struct sockaddr_in clientaddr;
-    int connfd;
-    arguments* args;
+    int connfd;               // The file descriptor for each client
+    arguments* args;          // Used to pass arguments to the thread
     pthread_t thread;
-    int pid;
-    int error = 0;                  /* Used to detect error in reading requests */
-    /* Check arguments */
+    int pid;                  //Holds child process id when forking
+    int error = 0;
+    // Check arguments 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <port number>\n", argv[0]);
         exit(0);
     }
     signal(SIGPIPE, SIG_IGN);
-    /* Create a listening descriptor */
+    // Create a listening descriptor 
     port = atoi(argv[1]);
     listenfd = Open_listenfd(port);
     while (1) {
-        error = 0;   //Used to fix a bug
+        error = 0;
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
         args = malloc(sizeof(arguments));
@@ -63,42 +64,56 @@ int main(int argc, char **argv)
             continue;
         }
 
-        if (threadCount == 1) {
-            pid = fork();
+        if (threadCount == 1) {     // Once there are two clients,
+            pid = fork();           // Create a new process to handle the next two
             if (pid != 0) {
                 printf("In Parent process, created child: %d\n", pid);
                 while(1){
-                    sleep(1000000000000000000);
+                    sleep(1000000000000000000);  // Sleep while two child threads handle each connection
                 }
             } else {
-                threadCount = 0;
+                threadCount = 0;                 // Reset thread count in new process
                 //continue while loop
             }
         }
     }
-    /* Control never reaches here */
+    // Control never reaches here 
     exit(0);
 }
 
 void* handleConnection(void* argsVoid) {
     threadCount++;
-    struct sockaddr_in clientaddr;  /* Clinet address structure*/
-    int connfd;                     /* socket desciptor for talking wiht client*/
-    int n;                       /* General index and counting variables */
-    int playerID;
+    struct sockaddr_in clientaddr;  // Client address structure
+    int connfd;                     // socket desciptor for talking with client
+    int n;                          // General index and counting variables 
+    int playerID;                   // Player ID to identify whose turn is first
     char buf[256];
     int line;
     int selection;             
-    int error = 0;                  /* Used to detect error in reading requests */
+    int error = 0;                  // Used to detect error in reading requests 
     int retval=-1;
-    arguments* args = (arguments*)argsVoid;
-    clientaddr = args->clientaddr;
+    arguments* args = (arguments*)argsVoid;  // Unpack all arguments passed into thread
+    clientaddr = args->clientaddr;      
     connfd = args->connfd;
     playerID = args->playerID;
 
-    printf("Thread Number/Player ID: %d\n", threadCount);
-    while(threadCount != 2){
+    printf("Thread Number/Player ID: %d\n", threadCount);   // Confirm connection on server side
+    while(threadCount != 2){        //Wait for next player to connect
         sleep(1);
+    }
+    if(playerID == 0){              // First player
+        retval = write(args->connfd, "You are connected to a game! You are Player 1 and play X on the board.", 256);    //Tell Client
+        if(retval < 0){
+            printf("Error writing!\n");
+            pthread_exit(NULL);
+        }
+    }
+    if(playerID == 1){              // Second Player
+        retval = write(args->connfd, "You are connected to a game! You are Player 2 and play O on the board. Please wait for Player 1 to make a move.", 256);   // Tell Client
+        if(retval < 0){
+            printf("Error writing!\n");
+            pthread_exit(NULL);
+        }
     }
     while (1) {
         if (turn > 8 && hodor == 0){
@@ -153,42 +168,47 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            bzero(buf,256);
-            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
-            retval = write(args->connfd, buf, 256);
-            if(retval < 0){
-                printf("Error writing!\n");
-                pthread_exit(NULL);
+            //check for winning line, diagonal
+            if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) || (board[0][2] == board[1][1] && board[0][2] == board[2][0])){
+                    hodor = 1;
+            }
+            for (line = 0; line <= 2; line ++){
+                if ((board[line][0] == board[line][1] && board[line][0] == board[line][2]) || (board[0][line] == board[1][line] && board[0][line] == board[2][line])){
+                    hodor = 1;
+                }
+            }
+            //check for winning line, rows and columns
+            if(hodor == 0){
+                bzero(buf,256);
+                snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n\nWaiting for Player 2 to make a move\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+                retval = write(args->connfd, buf, 256);
+                if(retval < 0){
+                    printf("Error writing!\n");
+                    pthread_exit(NULL);
+                }
+            }
+            else{
+                bzero(buf,256);
+                snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+                retval = write(args->connfd, buf, 256);
+                if(retval < 0){
+                    printf("Error writing!\n");
+                    pthread_exit(NULL);
+                }
             }
             
             if (error) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            // Check for a winning line - diagonals first 
-            if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) || (board[0][2] == board[1][1] && board[0][2] == board[2][0])){
+            if (hodor===1){
                 retval = write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
                 if(retval < 0){
                     printf("Error writing!\n");
                     pthread_exit(NULL);
                 }
-                hodor = 1;
                 turn++;
                 pthread_exit(NULL);
-            }else{
-            // Check rows and columns for a winning line 
-                for (line = 0; line <= 2; line ++){
-                    if ((board[line][0] == board[line][1] && board[line][0] == board[line][2]) || (board[0][line] == board[1][line] && board[0][line] == board[2][line])){
-                        retval = write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
-                        if(retval < 0){
-                            printf("Error writing!\n");
-                            pthread_exit(NULL);
-                        }
-                        hodor = 1;
-                        turn++;
-                        pthread_exit(NULL);
-                    }
-                }
             }
             turn++; //Increment turn
         }else if (turn % 2 == 1 && playerID == 1){
@@ -238,43 +258,47 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            //printf("Right before write\n");
-            bzero(buf,256);
-            snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
-            retval = write(args->connfd, buf, 256);
-            if(retval < 0){
-                printf("Error writing!\n");
-                pthread_exit(NULL);
+            //check for winning line, diagonal
+            if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) || (board[0][2] == board[1][1] && board[0][2] == board[2][0])){
+                    hodor = 1;
+            }
+            for (line = 0; line <= 2; line ++){
+                if ((board[line][0] == board[line][1] && board[line][0] == board[line][2]) || (board[0][line] == board[1][line] && board[0][line] == board[2][line])){
+                    hodor = 1;
+                }
+            }
+            //check for winning line, rows and columns
+            if(hodor == 0){
+                bzero(buf,256);
+                snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n\nWaiting for Player 1 to make a move\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+                retval = write(args->connfd, buf, 256);
+                if(retval < 0){
+                    printf("Error writing!\n");
+                    pthread_exit(NULL);
+                }
+            }
+            else{
+                bzero(buf,256);
+                snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
+                retval = write(args->connfd, buf, 256);
+                if(retval < 0){
+                    printf("Error writing!\n");
+                    pthread_exit(NULL);
+                }
             }
             
             if (error) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            // Check for a winning line - diagonals first 
-            if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) || (board[0][2] == board[1][1] && board[0][2] == board[2][0])){
+            if (hodor===1){
                 retval = write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
                 if(retval < 0){
                     printf("Error writing!\n");
                     pthread_exit(NULL);
                 }
-                hodor = 1;
                 turn++;
                 pthread_exit(NULL);
-            }else{
-            // Check rows and columns for a winning line 
-                for (line = 0; line <= 2; line ++){
-                    if ((board[line][0] == board[line][1] && board[line][0] == board[line][2]) || (board[0][line] == board[1][line] && board[0][line] == board[2][line])){
-                        retval = write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
-                        if(retval < 0){
-                            printf("Error writing!\n");
-                            pthread_exit(NULL);
-                        }
-                        hodor = 1;
-                        turn++;
-                        pthread_exit(NULL);
-                    }
-                }
             }
             turn++; //Increment turn
         }else{

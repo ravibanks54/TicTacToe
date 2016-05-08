@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 	
    portno = atoi(argv[2]);
    
-   // Create a socket point
+   // Create a socket
    sockfd = Socket(AF_INET, SOCK_STREAM, 0);
    
    if (sockfd < 0) {
@@ -52,6 +52,14 @@ int main(int argc, char *argv[]) {
       exit(1);
    }
    
+   bzero(buffer, 256);
+   n = read(sockfd, buffer, 256);
+   if(n < 0){
+      printf("Error reading!\n");
+   }
+   printf("%s\n", buffer);
+
+   
    // Now ask for a message from the user, this message will be read by server
    
 	while(1){
@@ -60,6 +68,9 @@ int main(int argc, char *argv[]) {
       if(n < 0){
          printf("Error reading!\n");
       }
+
+      //Check if you have won, lost or drawn
+
       printf("%s\n", buffer);
       if(strcmp(buffer, "You win!!!\n") == 0){
          exit(0);
@@ -69,6 +80,7 @@ int main(int argc, char *argv[]) {
          exit(0);
       }
       
+      //Select the square you want to place your symbol in
       printf("\nPlease enter the number of the square:\n");
       scanf("%d", &selection);
       if (selection <1 || selection > 9){
