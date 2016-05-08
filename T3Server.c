@@ -124,8 +124,8 @@ void* handleConnection(void* argsVoid) {
             }
             pthread_exit(NULL);
         }
-        if (turn % 2 == 0 && playerID == 0){ //Player 1's turn
-            if(hodor == 1){
+        if (turn % 2 == 0 && playerID == 0){ // Player 1's turn
+            if(hodor == 1){                  // Check if player has lost
                 retval = write(args->connfd, "You lose!!!\n", strlen("You lose!!!\n"));
                 if(retval < 0){
                     printf("Error writing!\n");
@@ -133,6 +133,8 @@ void* handleConnection(void* argsVoid) {
                 }
                 pthread_exit(NULL);
             }
+
+            //Send the board to the player
             bzero(buf, 256);
             snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
             retval = write(args->connfd, buf, 256);
@@ -146,10 +148,11 @@ void* handleConnection(void* argsVoid) {
                 close(args->connfd);
                 break;
             }
+            // Parse the row and column of symbol from the user's selection
             int pos = selection;
             int row = --pos/3;
             int column = pos%3;
-            if(board[row][column] == 'X' || board[row][column] == 'O'){
+            if(board[row][column] == 'X' || board[row][column] == 'O'){     // Check if move is already in 2d array
                 retval = write(args->connfd, "Error, move already made!\n", strlen("Error, move already made!\n"));
                 if(retval < 0){
                     printf("Error writing!\n");
@@ -157,11 +160,12 @@ void* handleConnection(void* argsVoid) {
                 }
                 continue;
             }
+            // Ensure pos is within range
             if (pos <0 || pos > 8){
                 printf("\nPlease enter a proper value.\n");
                 continue;
             }
-
+            // Insert the symbol
             board[row][column] = 'X';
 
             if (error) {
@@ -170,15 +174,16 @@ void* handleConnection(void* argsVoid) {
             }
             //check for winning line, diagonal
             if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) || (board[0][2] == board[1][1] && board[0][2] == board[2][0])){
-                    hodor = 1;
+                    hodor = 1;      //Set winner signal value to 1
             }
             for (line = 0; line <= 2; line ++){
                 if ((board[line][0] == board[line][1] && board[line][0] == board[line][2]) || (board[0][line] == board[1][line] && board[0][line] == board[2][line])){
-                    hodor = 1;
+                    hodor = 1;      //Set winner signal value to 1
                 }
             }
             //check for winning line, rows and columns
-            if(hodor == 0){
+
+            if(hodor == 0){     // If there isn't a winner yet, print board
                 bzero(buf,256);
                 snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n\nWaiting for Player 2 to make a move\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
                 retval = write(args->connfd, buf, 256);
@@ -186,8 +191,7 @@ void* handleConnection(void* argsVoid) {
                     printf("Error writing!\n");
                     pthread_exit(NULL);
                 }
-            }
-            else{
+            }else{              // If there is a winner, print final board state
                 bzero(buf,256);
                 snprintf(buf, 256, "\n\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n ---+---+---\n %c | %c | %c\n", board[0][0], board[0][1], board[0][2], board[1][0], board[1][1], board[1][2], board[2][0], board[2][1], board[2][2]);
                 retval = write(args->connfd, buf, 256);
@@ -201,7 +205,7 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            if (hodor===1){
+            if (hodor===1){     // If you have won, send to client
                 retval = write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
                 if(retval < 0){
                     printf("Error writing!\n");
@@ -211,7 +215,7 @@ void* handleConnection(void* argsVoid) {
                 pthread_exit(NULL);
             }
             turn++; //Increment turn
-        }else if (turn % 2 == 1 && playerID == 1){
+        }else if (turn % 2 == 1 && playerID == 1){      //Same code as above, for other player (swap X for O)
             if(hodor == 1){
                 retval = write(args->connfd, "You lose!!!\n", strlen("You lose!!!\n"));
                 if(retval < 0){

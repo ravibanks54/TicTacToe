@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
          printf("Error reading!\n");
       }
 
-      //Check if you have won, lost or drawn
+      //Check if you have won, lost, or drawn
 
       printf("%s\n", buffer);
       if(strcmp(buffer, "You win!!!\n") == 0){
