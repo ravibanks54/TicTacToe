@@ -205,7 +205,7 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            if (hodor===1){     // If you have won, send to client
+            if (hodor==1){     // If you have won, send to client
                 retval = write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
                 if(retval < 0){
                     printf("Error writing!\n");
@@ -295,7 +295,7 @@ void* handleConnection(void* argsVoid) {
                 close(connfd);
                 pthread_exit(NULL);
             }
-            if (hodor===1){
+            if (hodor==1){
                 retval = write(args->connfd, "You win!!!\n", strlen("You win!!!\n"));
                 if(retval < 0){
                     printf("Error writing!\n");
